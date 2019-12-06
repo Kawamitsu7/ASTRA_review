@@ -60,7 +60,28 @@ astra.algorithm.run(algorithm_id)
 - `cdef CAlgrithmManager* getSingletonPtr`
   - 多分シングルトン型をコンストラクトしてる？
 
-## 【疑問】CAlgorithm型とは?
+## AstraObjectManager.h
+
+### get()関数
+
+- 使っているのはおそらくCAstraObjectManagerBase内のやつ
+  - CAstraObjectManagerクラスを継承 --> **【疑問】CAstraObjectManagerクラスはどこで作ってるのだろうか**
+- m_tableにstore()されたオブジェクトを探すもの
+- mapにキーとしてintを,オブジェクトに紐づけて格納
+- その実態はSingleton?
+- class CAstraObjectManagerがtemplateとして定義されている
+  - get()関数に#includeされているものなら使用可能？ --> **Algorithm.hを見てみるか**
+
+### ちょっと待って
+
+- 下のほうにCAlgorithmManagerを発見
+  - Singleton(CAlgorithmManagerを型に指定)と，CAstraObjectManager(CAlgorithmを型に指定)の多重継承
+
+## Algorithm.h
+
+- class CAlgorithmを定義
+- #define _AstraExport は複数ファイルから#includeされることによる重複定義を防ぐ記号定数 (Globals.hに記述？)
+- run関数はここに仮想関数として書いてあるけど中身が分からん
 
 ## 【疑問】`alg.run()`の行方は？
 
