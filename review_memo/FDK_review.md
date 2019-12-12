@@ -1,5 +1,24 @@
 # ASTRA Toolbox FDK法のコードレビュー
 
+## いままでのまとめ(2019/12/12)
+
+- 実際にFDK法を呼び出しているのは
+
+```python
+astra.algorithm.run(algorithm_id)
+```
+
+### 入力 `algorithm_id`
+
+- `astra.algorithm.create(alg_cfg)`で作成
+  - この時FDK法をrunするための実体が作成され，`algorithm.run()`で呼び出される
+- alg_cfg : algorithm用の設定パラメタ
+  - {'type' : 'FDK_CUDA', 'ProjectionDataId' : projections_id(int型), 'ReconstructionDataId' : reconstruction_id(int型)}
+
+- 実体の内容はおそらく **CudaFDKAlgorithm3D.cpp/.h** から派生するプログラムを読む必要があり
+
+
+
 ## FDK法の呼び出し方
 
 - 実際に呼び出しているのは
@@ -89,3 +108,107 @@ astra.algorithm.run(algorithm_id)
 - manAlg.get(i)を呼び出している．
 - つまり PyAlgorithmManager.pxdに記載された，`cppclass CAlgorithmManager`クラスの`CAlgorithm * get(int)`
 - すなわち，**AstraObjectManager.hのget()関数を読むべき**
+  --> よくわからないidの管理をしていた
+
+
+
+## 次
+
+- 一番最初の`astra.astra_dict('FDK_CUDA')`を追いかけてみる？
+
+## creators.py
+
+- `astra_dict(intype)`はここに
+
+- 入力 : String型のintype
+
+- 出力 : dictクラス
+
+  - ASTRAの辞書型オブジェクト
+  - というかpythonが提供するdict型っぽい？
+
+  ---
+
+  ### dict型とは
+
+  - {キー(str型) : 値} でデータ保持
+  - dict["(今存在しないキー)"] = hoge とすると，新しいペアが追加される
+
+  ---
+
+- 結局どうなった？
+
+  - FDK_astra.py内で
+    - alg_cfg に {'type' : 'FDK_CUDA', 'ProjectionDataId' : projections_id(int型), 'ReconstructionDataId' : reconstruction_id(int型)} を構成
+      - idについてはdata3d.pyを追っていけば分かりそう
+    - `astra.algorithm.create(alg_cfg)`でidを取得，この際にアルゴリズム(FDK)の実行オブジェクトが生成される？
+       --> こいつを追ってみよう
+
+## 再び algorithm.py --> algorithm_c.pyx
+
+### `create(config)`
+
+- 入力 : `config` (dict型)
+- 出力 : `manAlg.store(alg)`
+
+- 処理流れ
+  - Config型 で `cfg = utils.dictToConfig(six.b('Algorithm'), config)`
+    - six.b(data) : 8bit文字で構成された文字列を返す
+    - `utils.dictToConfig()` --> 詳しくは後で
+  - CAlgorithm型 で `alg = PyAlgorithmFactory.getSingletonPtr().create(cfg.self.getAttribute(six.b('type')))`
+    - これも詳しくは後で
+  - algに対して例外処理
+  - cfgの消去
+  - `manAlg.store(alg)`
+    - これも詳しくは後で
+
+## utils.pyx
+
+### `utils.dictToConfig(string rootname, dc)`
+
+- Config 型
+  - Config.cpp Config.h を参考
+  - `XMLNode self, XMLDocument *_doc`を所持
+  - メンバ関数 : `initialize(str rootname)`
+    - 多分docの初期化
+- `readDict(cfg.self, dc)`
+  - 実行できなければ例外
+  - 中身
+    - val にdcの値をひとつづついれる
+      - item に dcのキーをひとつづつ入れてる
+    - val の形式が何であるかを調べてそれぞれに応じた処理
+    - itemが'type'なら，`root.addAttribute(type, val)`
+    - これはのちにSIngletonを作るとき，getAttributeで呼び出される
+      - おそらくstrで"FDK_CUDA"が呼ばれる？
+
+- 関連ファイルメモ
+  - src/Config.cpp, astra/Config.h
+    - Config型定義
+    - XMLNode.cpp, XMLDocument.cppも関連？もちろんヘッダも
+  - python/astra/PyIncludes.pxd
+    - いろんなオブジェクトの定義
+    - ここからいろんなcppやhに派生？
+  - Singleton関係の前述のやつら
+
+## PyAlgorithmFactory.pxd --> astra/AstraObjectFactory.h
+
+### `getSingletonPtr().create(cfg.self.getAttribute(six.b('type')))`
+
+- ここで 'FDK_CUDA' を引数としてcreateメソッドが呼ばれる
+
+### `create(str _sType)`
+
+- TypeListからfinderにタイプを探すもの
+
+  - typelist::functor_find型 の finderを用いて検索
+
+- ここではタイプ名"CAlgorithm"，参照するタイプリスト"AlgorithmTypeList"として，CalgorithmFactoryクラスが定義されており，それに対してgetSingletonPtr()で実態を生成する？
+
+  #### Typelist.h --> AlgorithmTypeList.h
+
+  - タイプリストの定義
+  - コンストラクタや追加や削除，検索などの動作も定義
+  - AlgorithmTypeListに使用できるタイプが列挙
+
+- 多分だけど，**結局CudaFDKAlgorithm3D.cpp, CudaFDKAlgorithm3D.hに行き着く**
+  - ここで割と具体的なrunが出てきた
