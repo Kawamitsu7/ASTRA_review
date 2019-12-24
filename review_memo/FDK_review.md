@@ -211,4 +211,20 @@ astra.algorithm.run(algorithm_id)
   - AlgorithmTypeListに使用できるタイプが列挙
 
 - 多分だけど，**結局CudaFDKAlgorithm3D.cpp, CudaFDKAlgorithm3D.hに行き着く**
+  
   - ここで割と具体的なrunが出てきた
+
+## CudaFDKAlgorithm3D.cpp --> CudaFDKAlgorithm3D.h
+
+### `CCudaFDKAlgorithm3D::run(int _iNrIterations)`
+
+- 多分これが呼ばれる
+- initializeされたかどうか確認
+- pSinoMem，pReconMem，pFilterDataには対応するデータポインタをdynamic_castして代入
+- filter にpFilterDataから`getDataConst()`でフィルタデータを読み出す？
+- `cgm.doFDK(m_projector,pReconMem,pSinoMem,m_bShortScan, filter)`で次へ行く？
+
+## やること
+
+- m_projector, m_bshortScanってなんやねん
+- CCompositeGeometryManager.h から doFDKを見つける
