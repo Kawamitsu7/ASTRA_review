@@ -1,5 +1,11 @@
 # ASTRA Toolbox FDK法のコードレビュー
 
+## 今までのまとめ(2020/1/8)
+
+- FDK法の実際の処理は．**fdk.cu(.h)**に記述されている
+  - 注意：任意のcone_vecジオメトリをサポートしていない．通常のコーンジオメトリの垂直サブジオメトリ（cf. Composite Geometry Manager）のみ．
+  - **ここから先の処理内容は別にメモを作る**
+
 ## いままでのまとめ(2019/12/12)
 
 - 実際にFDK法を呼び出しているのは
@@ -211,4 +217,36 @@ astra.algorithm.run(algorithm_id)
   - AlgorithmTypeListに使用できるタイプが列挙
 
 - 多分だけど，**結局CudaFDKAlgorithm3D.cpp, CudaFDKAlgorithm3D.hに行き着く**
+  
   - ここで割と具体的なrunが出てきた
+
+## CudaFDKAlgorithm3D.cpp
+
+- `void CCudaFDKAlgorithm3D::run(int _iNrIterations)`
+  - initialize確認
+  - 各種データを関数に食わせる準備
+    - dynamic_cast : 参考- https://programming.pc-note.net/cpp/cast.html
+  - FDKを実行する命令は2ヶ所…?
+    - `#if 0 --> astraCudaFDK`
+      - これは過去に作ったプログラムの断片らしい
+      - `#if 0` は無効にする
+    - そうでない --> cgm.doFDK
+      - つまりこっちだけ見ればいい
+      - cgm.doFDK は CompositGeometryManager.cpp (.h)によって提供
+
+## CompositGeometryManager.cpp
+
+- `doFDK()`
+  - dynamic_cast できない場合はエラー
+  - 変数 job にFDKのジョブ情報を作成
+  - ジョブリストにプッシュ
+  - `doJobs(L)`で実行
+- `doJobs()`
+  - 多分`dojob(iter)`で呼び出す
+- `dojob()`
+  - GPUのメモリアロケーションとかやってる
+  - `switch(j.eType)`で，`case CCompositeGeometryManager::Sjob::JOB_FDK`にアクセス
+  - `ok = astraCUDA3d::FDK()`でFDKを実行に移す
+    - どうもサブタスクに分割(sub-FDK)して実行している？
+    - astra3d.cu(.h)を呼び出しそいつがfdk.cu(.h)を呼び出していると考えられる
+
