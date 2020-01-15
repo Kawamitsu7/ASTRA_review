@@ -31,3 +31,24 @@
     - astra/cuda/3d/cone_bp.h
     - つまりcone_bp.cuに記述？
 - 全てできたならtrueを返す
+
+#### `FDK_PreWeight`
+
+- 投影データに係数乗算
+- 係数 = 光線の中央線(X,z)=(0,0)とその検出器までの線との$\cos$
+- `devFDK_ParkerWeight()`で実行
+
+#### `FDK_Filter`
+
+- Filterインスタンスの生成
+- サイノグラム1枚ずつ処理と書いてある (l.279)
+- FFT --> Filter適用 --> IFFT の処理を行う
+
+#### `ConeBP`
+
+- 投影を配列に変換？(l.342)
+- -->`ConeBP_Array()`-->`dev_cone_BP()`or`dev_cone_BP_SS()`
+
+##### `dev_cone_BP()`
+
+- いわゆる逆投影処理を行ってるっぽい…？

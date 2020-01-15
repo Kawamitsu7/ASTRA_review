@@ -243,11 +243,12 @@ astra.algorithm.run(algorithm_id)
   - `doJobs(L)`で実行
 - `doJobs()`
   - 多分`dojob(iter)`で呼び出す
+  - ここの`ASTRA_DEBUG`でシングルスレッドでやるかマルチスレッドでやるかが分かりそう
 - `dojob()`
   - GPUのメモリアロケーションとかやってる
   - `switch(j.eType)`で，`case CCompositeGeometryManager::Sjob::JOB_FDK`にアクセス
   - `ok = astraCUDA3d::FDK()`でFDKを実行に移す
-    - どうもサブタスクに分割(sub-FDK)して実行している？
+    - どうもサブタスクに分割(sub-FDK)して実行している？ (l.1530)
     - astra3d.cu(.h)を呼び出しそいつがfdk.cu(.h)を呼び出していると考えられる
 
 ## CudaFDKAlgorithm3D.cpp --> CudaFDKAlgorithm3D.h
