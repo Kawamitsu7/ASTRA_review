@@ -250,3 +250,17 @@ astra.algorithm.run(algorithm_id)
     - どうもサブタスクに分割(sub-FDK)して実行している？
     - astra3d.cu(.h)を呼び出しそいつがfdk.cu(.h)を呼び出していると考えられる
 
+## CudaFDKAlgorithm3D.cpp --> CudaFDKAlgorithm3D.h
+
+### `CCudaFDKAlgorithm3D::run(int _iNrIterations)`
+
+- 多分これが呼ばれる
+- initializeされたかどうか確認
+- pSinoMem，pReconMem，pFilterDataには対応するデータポインタをdynamic_castして代入
+- filter にpFilterDataから`getDataConst()`でフィルタデータを読み出す？
+- `cgm.doFDK(m_projector,pReconMem,pSinoMem,m_bShortScan, filter)`で次へ行く？
+
+## やること
+
+- m_projector, m_bshortScanってなんやねん
+- CCompositeGeometryManager.h から doFDKを見つける
