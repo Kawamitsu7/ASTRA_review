@@ -1,0 +1,50 @@
+package:
+  name: astra-toolbox
+  version: '1.9.0dev'
+
+source:
+  git_url: https://github.com/astra-toolbox/astra-toolbox.git
+  git_tag: master
+
+build:
+  number: 0
+  script_env:
+    - CC # [linux]
+
+test:
+  imports:
+    - astra
+  requires:
+    # To avoid large downloads just for testing after build phase
+    - nomkl # [not win]
+    # import scipy.sparse.linalg fails with mkl-2017.0.4 on Windows
+    - mkl !=2017.0.4 # [win]
+    # scipy 1.1.0 packages are broken with python 2.7 and some numpy versions
+    - scipy !=1.1.0 # [py27]
+
+requirements:
+  build:
+    - python
+    - cython >=0.13
+    - nomkl # [not win]
+    - numpy {{ numpy }}
+    - scipy
+    - six
+    - libastra ==1.9.0dev
+
+  run:
+    - python
+    - {{ pin_compatible('numpy', min_pin='x.x', max_pin='x.x') }}
+    - scipy
+    - six
+    - libastra ==1.9.0dev
+
+
+about:
+  home: http://www.astra-toolbox.com
+  license: GPLv3
+  summary: 'The ASTRA Toolbox is a Python toolbox of high-performance GPU primitives for 2D and 3D tomography.'
+
+# See
+# http://docs.continuum.io/conda/build.html for
+# more information about meta.yaml
